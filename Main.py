@@ -14,14 +14,6 @@ def signal_detection():
         args.m = int(args.m) if args.m != '2' else -1
         image = imageTreatment.load_image(direction='data/' + file)
         image = imageTreatment.brute_force(image)
-        # hist = imageTreatment.histograma(image=image)
-        # #esquinas = imageTreatment.esquinas()
-        suavizado = imageTreatment.suavizado(window_size=(int(args.ws), int(args.ws)), sigma_x=float(args.s), image=image)
-        # #gradientes = imageTreatment.gradientes(k=int(args.k), image=suavizado) # lista de tres imagens
-        #
-        edges = imageTreatment.edge_detection(mode='canny', image=suavizado, c_max=float(args.cmax), c_min=float(args.cmin))
-        # #closing = imageTreatment.closing(image=edges, k=5)
-        # #opening = imageTreatment.opening(image=closing, k=5)
 
 
 if __name__ == '__main__':
