@@ -1,6 +1,7 @@
-import imutils as imutils
+
 import numpy as np
 import cv2
+from imutils import perspective
 from matplotlib import pyplot as plt
 
 from ShapeDetector import ShapeDetector
@@ -18,121 +19,80 @@ class ImageTreatment:
 
     def __hsv_scaling(self, hsv):
         hsv[0] = (hsv[0]*180)/360
-        # hsv[1] = (hsv[1]*100)/255
-        # hsv[2] = (hsv[2]*100)/255
+        hsv[1] = (hsv[1]*255)/100
+        hsv[2] = (hsv[2]*255)/100
         print(hsv)
         return hsv
 
-    def second_way(self, image=None):
+    def brute_force(self, image=None, show=False):
         if image is None:
             image = self.image
         gray = cv2.cvtColor(image, cv2.COLOR_BGR2GRAY)
-        ret, thresh1 = cv2.threshold(gray, 80, 255, cv2.THRESH_BINARY_INV)
+        gray_soft = self.suavizado(gray,(15,15), 2.0)
+        self.show_image(gray_soft)
+        hist = cv2.calcHist([gray_soft], [0], None, [256],[0,255])
+        min_max = cv2.minMaxLoc(hist)
+        print(min_max)
+        print((min_max[2][1]+min_max[3][1])/2)
+        ret, thresh1 = cv2.threshold(gray, 70, 255, cv2.THRESH_BINARY_INV)
         # self.show_image(thresh1)
         res = cv2.bitwise_and(image, image, mask=thresh1)
-        # self.show_image(res)
+        self.show_image(res)
         hsv = cv2.cvtColor(res, cv2.COLOR_BGR2HSV)
         # lower_yellow = np.array([0, 30, 30])
         # upper_yellow = np.array([60, 255, 255])
         lower_red = self.__hsv_scaling(np.array([290, 10, 10]))
         upper_red = self.__hsv_scaling(np.array([360, 100, 100]))
         mask_red = cv2.inRange(hsv, lower_red, upper_red)
-        # self.show_image(mask_red)
-        mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_OPEN,cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(3,3)))
-        mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_CLOSE,cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(25,25)))
+        self.show_image(mask_red) if show else None
+        mask_red = cv2.dilate(mask_red, cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(12,12)), iterations=1)
+        mask_red = cv2.erode(mask_red,cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(8,8)), iterations=2)
+        # mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_OPEN,cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(10,10)))
+        # mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_CLOSE,cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(25,25)))
         # self.show_image(mask_red)
         lower_red = self.__hsv_scaling(np.array([0, 10, 10]))
-        upper_red = self.__hsv_scaling(np.array([30, 150, 150]))
+        upper_red = self.__hsv_scaling(np.array([30, 100, 100]))
         mask_red = mask_red + cv2.inRange(hsv, lower_red, upper_red)
-        self.show_image(mask_red)
-        mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_OPEN,cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(1,1)))
-        mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_CLOSE,cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(25,25)))
-        self.show_image(mask_red)
-        lower_yellow = self.__hsv_scaling(np.array([30, 10, 10]))
-        upper_yellow = self.__hsv_scaling(np.array([90, 255, 255]))
+        self.show_image(mask_red, name='red')if show else None
+        mask_red = cv2.dilate(mask_red, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20, 20)), iterations=1)
+        mask_red = cv2.erode(mask_red, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (17, 17)), iterations=2)
+        # mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_OPEN,cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(10,10)))
+        # mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_CLOSE,cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(60,60)))
+        self.show_image(mask_red, name='red')if show else None
+        lower_yellow = self.__hsv_scaling(np.array([10, 5, 5]))
+        upper_yellow = self.__hsv_scaling(np.array([90, 100, 100]))
         mask_yellow = cv2.inRange(hsv, lower_yellow, upper_yellow)
-        mask_yellow = cv2.morphologyEx(mask_yellow, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2)))
-        mask_yellow = cv2.morphologyEx(mask_yellow, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15)))
-        # self.show_image(mask_yellow)
+        self.show_image(mask_yellow, name='yellow') if show else None
+        mask_yellow = cv2.dilate(mask_yellow, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4)), iterations=1)
+        self.show_image(mask_yellow, name='yellow') if show else None
+        mask_yellow = cv2.erode(mask_yellow, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)), iterations=1)
+        # mask_yellow = cv2.morphologyEx(mask_yellow, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (12, 12)))
+        # mask_yellow = cv2.morphologyEx(mask_yellow, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2)))
+        self.show_image(mask_yellow, name='yellow')if show else None
         # self.show_image(mask_yellow + mask_red)
-        lower_blue = self.__hsv_scaling(np.array([215, 25, 25]))
-        upper_blue = self.__hsv_scaling(np.array([240, 255, 255]))
+        lower_blue = self.__hsv_scaling(np.array([215, 10, 10]))
+        upper_blue = self.__hsv_scaling(np.array([260, 80, 80]))
         mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
+        self.show_image(mask_blue, name='blue') if show else None
         mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7)))
         mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15)))
         mask_full = mask_red + mask_yellow + mask_blue
-        # self.show_image(mask_blue)
-        self.show_image(mask_full)
-        mask_full = cv2.morphologyEx(mask_full, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (10,10)))
-        # mask_full = cv2.morphologyEx(mask_full, cv2.MORPH_CLOSE, cv2.getStructuringElem
-        # ent(cv2.MORPH_RECT, (105,105)))
+        self.show_image(mask_blue, name='blue')if show else None
+
+        mask_full = cv2.morphologyEx(mask_full, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5,5)))
+        mask_full = cv2.morphologyEx(mask_full, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (20,20)))
         mask_full = cv2.dilate(mask_full, cv2.getStructuringElement(cv2.MORPH_RECT,(14,14)), iterations=3)
-        self.show_image(mask_full)
+        self.show_image(mask_full, name='full')
+
         gray = cv2.bitwise_and(gray, gray, mask=mask_full)
-        self.show_image(gray)
-        # self.show_image(gray)
-        gray = cv2.equalizeHist(gray)
-        self.show_image(gray)
-        return gray
+        self.show_image(gray)if show else None
+        return mask_full
 
-    def find_circles(self, image=None):
+    def fine_grain(self, image=None):
         if image is None:
             image = self.image
-        img = cv2.GaussianBlur(image, (5, 5), 0)
-
-        for i in cv2.split(img):
-            canny  = cv2.Canny(i, 25, 100, apertureSize=3)
-            kernel = np.ones((3,3), np.uint8)
-            dilate = cv2.dilate(canny, kernel=kernel)
-            self.show_image(image_show=dilate)
-            im2, contours, hierarchy = cv2.findContours(dilate, cv2.RETR_LIST, cv2.CHAIN_APPROX_SIMPLE)
-            for c in contours:
-                approx = cv2.approxPolyDP(c, 0.0001 * cv2.arcLength(c, True), True)
-                if len(approx)>9:
-                    print(cv2.contourArea(c))
-                    if cv2.contourArea(c) > 150:
-                        cv2.drawContours(self.image, [c], 0, (0, 255, 255), 0)
-            cv2.imshow('im', self.image)
-            k = cv2.waitKey(0)
-
-    def histograma(self, image=None):
-        # se obtiene el histograma de la imagen
-        if image is None:
-            image = self.image
-        treshold = 40
-        cv2.imshow('im', image)
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        hue, sat, val = cv2.split(hsv)
-        cv2.namedWindow('h', cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('h', 300, 300)
-        cv2.imshow('h', hue)
-        cv2.namedWindow('s', cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('s', 300, 300)
-        cv2.imshow('s', sat)
-        cv2.namedWindow('v', cv2.WINDOW_NORMAL)
-        cv2.resizeWindow('v', 300, 300)
-        cv2.imshow('v', val)
-        k = cv2.waitKey(0)
-        if k == 27: # Cierra las ventanas al pulsar escape
-            cv2.destroyAllWindows()
-        hist=cv2.calcHist([val],[0], None, [255], [0,255])
-        min, max, minLoc, maxLoc = cv2.minMaxLoc(hist)
-        vMax = maxLoc[1]
-        print(vMax)
-        mask = val
-        print(mask)
-        mask[mask >= (vMax - treshold)] = 255
-        mask[mask < (vMax - treshold)] = 0
-        kernel = np.ones((5,5), np.uint8)
-        dilate = cv2.dilate(mask, kernel, iterations=2)
-        mask = dilate
-        mask[mask == 255] = 20
-        mask[mask == 0] = 255
-        mask[mask == 20] = 0
-        self.show_image(image_show=mask)
-        res = cv2.bitwise_and(image, image, mask=mask)
-        self.show_image(image_show=res)
-        return res
+        h,s,v = cv2.split(hsv)
 
     def gradientes(self, k=5, image=None):
         # Estudio de los gradientes
@@ -164,12 +124,6 @@ class ImageTreatment:
         # Estudios de suavizado
         if image is None:
             image = self.image
-        # ret, thresh1 = cv2.threshold(image, 40, 255, cv2.THRESH_BINARY)
-        # self.show_image(thresh1)
-        # res = cv2.bitwise_and(image, image, mask=thresh1)
-        # self.show_image(res)
-        image = image - cv2.morphologyEx(image, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (4, 4)))
-        self.show_image(image)
         output = cv2.GaussianBlur(image, ksize=window_size, sigmaX=sigma_x, sigmaY=sigma_x)
         return output
 
@@ -178,31 +132,52 @@ class ImageTreatment:
         if image is None:
             image = self.image
         if mode == 'canny':
+            hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
             output = cv2.Canny(image, c_min, c_max)
-            # output = cv2.dilate(output, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2,2)))
-            output = cv2.morphologyEx(output, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2,2)))
-            # output = cv2.morphologyEx(output, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)))
+            output = cv2.dilate(output, None, iterations=1)
+            output = cv2.erode(output, None, iterations=1)
             self.show_image(output)
-            (_,cnts, _) = cv2.findContours(output.copy(), cv2.RETR_TREE, cv2.CHAIN_APPROX_SIMPLE)
+            (_,cnts, _) = cv2.findContours(output.copy(), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
+            cnt_image = self.image.copy()
+            cv2.drawContours(cnt_image, cnts, -1, (0, 255, 0), 0)
+            self.show_image(cnt_image)
             # cnts = sorted(cnts, key=cv2.contourArea, reverse=True)[:10]
             screenCnt = None
             for c in cnts:
                 # approximate the contour
                 peri = cv2.arcLength(c, True)
-                approx = cv2.approxPolyDP(c, 0.001 * peri, True)
-                # cv2.drawContours(self.image, [c], 0, (255, 255, 255), 0)
-                if len(approx) == 3 and cv2.contourArea(c)>100:
-                    cv2.drawContours(self.image, [c], 0, (0, 255, 255), 0)
-                elif len(approx) >= 4 and len(approx) <= 7 and cv2.contourArea(c)>100:
-                    cv2.drawContours(self.image, [c], 0, (0, 255, 0), 0)
-                elif len(approx) > 7 and cv2.contourArea(c)>100:
-                    cv2.drawContours(self.image, [c], 0, (255,0,0),0)
-                    self.show_image(self.image)
-                # if our approximated contour has four points, then
-                # we can assume that we have found our screen
-                # if len(approx) == 4:
-                #     screenCnt = approx
-                #     break
+                approx = cv2.approxPolyDP(c, 0.025 * peri, True)
+                print("area "+str(cv2.contourArea(c)))
+                print("approx " + str(len(approx)))
+
+                c = c.reshape(-1, 2)
+                # cv2.drawContours(self.image, [c], 0, (255,0,0),0)
+
+                # compute the rotated bounding box of the contour
+                box = cv2.minAreaRect(c)
+                box = cv2.boxPoints(box)
+                box = np.array(box, dtype="int")
+
+                # order the points in the contour such that they appear
+                # in top-left, top-right, bottom-right, and bottom-left
+                # order, then draw the outline of the rotated bounding
+                # box
+                box = perspective.order_points(box)
+
+                x, y, w, h = cv2.boundingRect(c)
+                roi = self.image[y:y + h, x:x + w]
+                new_mask = self.fine_grain(roi)
+                self.show_image(roi)
+                cv2.drawContours(self.image, [box.astype("int")], -1, (0, 255, 0), 2)
+                self.show_image(self.image)
+                # plt.show()
+                # self.show_image(self.image)
+                # self.show_image(roi)
+            # if our approximated contour has four points, then
+            # we can assume that we have found our screen
+            # if len(approx) == 4:
+            #     screenCnt = approx
+            #     break
         self.show_image(self.image)
         return output
 

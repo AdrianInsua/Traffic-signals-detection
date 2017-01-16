@@ -13,7 +13,7 @@ def signal_detection():
         files.append('data/' + file)
         args.m = int(args.m) if args.m != '2' else -1
         image = imageTreatment.load_image(direction='data/' + file)
-        image = imageTreatment.second_way(image)
+        image = imageTreatment.brute_force(image)
         # hist = imageTreatment.histograma(image=image)
         # #esquinas = imageTreatment.esquinas()
         suavizado = imageTreatment.suavizado(window_size=(int(args.ws), int(args.ws)), sigma_x=float(args.s), image=image)
