@@ -92,7 +92,21 @@ class ImageTreatment:
         if image is None:
             image = self.image
         hsv = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        h,s,v = cv2.split(hsv)
+        # h,s,v = cv2.split(hsv)
+        lower_red = self.__hsv_scaling(np.array([290, 10, 10]))
+        upper_red = self.__hsv_scaling(np.array([360, 100, 100]))
+        mask_red = cv2.inRange(hsv, lower_red, upper_red)
+        lower_red = self.__hsv_scaling(np.array([0, 10, 10]))
+        upper_red = self.__hsv_scaling(np.array([30, 100, 100]))
+        mask_red = mask_red + cv2.inRange(hsv, lower_red, upper_red)
+        self.show_image(mask_red)
+        # mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (60, 60)))
+        self.show_image(mask_red)
+        marked = self.edge_detection(mask_red, c_max=20, c_min=10, draw_contour=True)
+        for m in marked:
+            cv2.drawContours(image, [m], -1, (0, 255, 0), 2)
+            self.show_image(image)
+        return image
 
     def gradientes(self, k=5, image=None):
         # Estudio de los gradientes
@@ -127,8 +141,9 @@ class ImageTreatment:
         output = cv2.GaussianBlur(image, ksize=window_size, sigmaX=sigma_x, sigmaY=sigma_x)
         return output
 
-    def edge_detection(self, image=None, mode='canny', c_max=200, c_min=100):
+    def edge_detection(self, image=None, mode='canny', c_max=200, c_min=100, draw_contour=False):
         # Detección de bordes
+        contours = []
         if image is None:
             image = self.image
         if mode == 'canny':
@@ -164,12 +179,14 @@ class ImageTreatment:
                 # box
                 box = perspective.order_points(box)
 
-                x, y, w, h = cv2.boundingRect(c)
-                roi = self.image[y:y + h, x:x + w]
-                new_mask = self.fine_grain(roi)
-                self.show_image(roi)
-                cv2.drawContours(self.image, [box.astype("int")], -1, (0, 255, 0), 2)
-                self.show_image(self.image)
+                if not draw_contour:
+                    x, y, w, h = cv2.boundingRect(c)
+                    roi = self.image[y:y + h, x:x + w]
+                    new_mask = self.fine_grain(roi)
+                    self.image[y:y + h, x:x + w] = new_mask
+                    self.show_image(self.image)
+                else:
+                    contours.append(box.astype("int"))
                 # plt.show()
                 # self.show_image(self.image)
                 # self.show_image(roi)
@@ -178,8 +195,8 @@ class ImageTreatment:
             # if len(approx) == 4:
             #     screenCnt = approx
             #     break
-        self.show_image(self.image)
-        return output
+        # self.show_image(self.image)
+        return output if not draw_contour else contours
 
     def load_image(self, direction=''):
         # Carga la imagen.
