@@ -4,16 +4,13 @@ import argparse
 import os
 
 def signal_detection():
-    files = []
-
-    for file in os.listdir('data'):
+    for i in range(1,7):
         imageTreatment = ImageTreatment.ImageTreatment()
-        if not os.path.isfile('data/'+file):
-            continue
-        files.append('data/' + file)
         args.m = int(args.m) if args.m != '2' else -1
-        image = imageTreatment.load_image(direction='data/' + file)
-        image = imageTreatment.brute_force(image)
+        imageTreatment.load_image(direction='data/' + str(i) + '.jpg')
+        imageTreatment.load_image_test(direction='data/' + str(i) + '_test.jpg')
+        imageTreatment.brute_force(True)
+        imageTreatment.test()
 
 
 if __name__ == '__main__':
