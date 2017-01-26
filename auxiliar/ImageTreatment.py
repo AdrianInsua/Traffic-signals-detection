@@ -4,6 +4,7 @@ import cv2
 from imutils import perspective
 from matplotlib import colors
 from matplotlib import pyplot as plt
+from sklearn.metrics import classification_report
 
 from ShapeDetector import ShapeDetector
 
@@ -18,7 +19,7 @@ class ImageTreatment:
         self.image_test = None
         self.modo = 0
         self.images = []
-        self.new_marked = {'red': [], 'yellow':[], 'blue':[]}
+        self.new_marked = {'red': [], 'yellow':[], 'blue':[], 'light_blue':[]}
 
     def __hsv_scaling(self, hsv):
         hsv[0] = (hsv[0]*180)/360
@@ -30,8 +31,8 @@ class ImageTreatment:
         self.show_image(self.image_test)
         test = []
         predicted = []
-        masks = {'red': None, 'yellow': None, 'blue': None}
-        regiones = {'red': 0, 'yellow': 0, 'blue': 0}
+        masks = {'red': None, 'yellow': None, 'blue': None, 'light_blue':None}
+        regiones = {'red': 0, 'yellow': 0, 'blue': 0, 'light_blue': 0}
         hsv = cv2.cvtColor(self.image_test, cv2.COLOR_BGR2HSV)
         lower_red = self.__hsv_scaling(np.array([0, 10, 10]))
         upper_red = self.__hsv_scaling(np.array([60, 100, 100]))
@@ -39,23 +40,40 @@ class ImageTreatment:
         lower_blue = self.__hsv_scaling(np.array([215, 10, 10]))
         upper_blue = self.__hsv_scaling(np.array([248, 100, 100]))
         mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
+        lower_blue = self.__hsv_scaling(np.array([100, 10, 10]))
+        upper_blue = self.__hsv_scaling(np.array([140, 100, 100]))
+        mask_light_blue = cv2.inRange(hsv, lower_blue, upper_blue)
         lower_yellow = self.__hsv_scaling(np.array([20, 10, 10]))
         upper_yellow = self.__hsv_scaling(np.array([90, 100, 100]))
         mask_yellow = cv2.inRange(hsv, lower_yellow, upper_yellow)
         self.show_image(mask_red)
         self.show_image(mask_blue)
         self.show_image(mask_yellow)
+        self.show_image(mask_light_blue)
         mask_red = self.edge_detection(mask_red, c_max=30, c_min=10, draw_contour=False, color='red', test=True)
         mask_blue = self.edge_detection(mask_blue, c_max=30, c_min=10, draw_contour=False, color='blue', test=True)
         mask_yellow = self.edge_detection(mask_yellow, c_max=30, c_min=10, draw_contour=False, color='blue', test=True)
+        mask_light_blue = self.edge_detection(mask_light_blue, c_max=30, c_min=10, draw_contour=False, color='light_blue', test=True)
         masks['red'] = mask_red
         masks['blue'] = mask_blue
         masks['yellow'] = mask_yellow
+        masks['light_blue'] = mask_light_blue
         # print(len(mask_red))
         # print(mask_red[1])
         cf = 0
-        matriz = np.zeros((4,4))
+        t_n = []
+        matriz = np.zeros((5,5))
         for c in self.new_marked.keys():
+            print(c)
+            if len(self.new_marked[c]) > 0:
+                if c == 'red':
+                    t_n.append('Prohibicion')
+                if c == 'yellow':
+                    t_n.append('Aviso')
+                if c == 'blue':
+                    t_n.append('Advertencia')
+                if c == 'light_blue':
+                    t_n.append('Obligacion')
             for n in range(len(self.new_marked[c])):
                 rect = []
                 x = self.new_marked[c][n]['xy'][0]+self.new_marked[c][n]['nm'][0][3][0]
@@ -79,29 +97,58 @@ class ImageTreatment:
                         regiones[c] += 1
                         if c == 'red':
                             matriz[1][1] += 1
+                            predicted.append(1)
+                            test.append(1)
                         if c == 'yellow':
                             matriz[2][2] += 1
+                            predicted.append(2)
+                            test.append(2)
                         if c == 'blue':
                             matriz[3][3] += 1
-                        predicted.append(1)
+                            predicted.append(3)
+                            test.append(3)
+                        if c == 'light_blue':
+                            matriz[4][4] += 1
+                            predicted.append(4)
+                            test.append(4)
                     else:
                         if c == 'red':
                             matriz[1][0] += 1
+                            predicted.append(0)
+                            test.append(1)
                         if c == 'yellow':
                             matriz[2][0] += 1
+                            predicted.append(0)
+                            test.append(2)
                         if c == 'blue':
                             matriz[3][0] += 1
-                        predicted.append(0)
+                            predicted.append(0)
+                            test.append(3)
+                        if c == 'light_blue':
+                            matriz[4][0] += 1
+                            predicted.append(0)
+                            test.append(4)
                 else:
+                    t_n.append('Nada')
                     if c == 'red':
                         matriz[0][1] += 1
+                        test.append(0)
+                        predicted.append(1)
                     if c == 'yellow':
                         matriz[0][2] += 1
+                        test.append(0)
+                        predicted.append(2)
                     if c == 'blue':
                         matriz[0][3] += 1
+                        test.append(0)
+                        predicted.append(3)
+                    if c == 'light_blue':
+                        matriz[0][4] += 1
+                        test.append(0)
+                        predicted.append(4)
         print(regiones)
         print(matriz)
-        target_names = ['Nada','Prohibicion','Peligro','Informacion']
+        target_names = ['Nada','Prohibicion','Peligro','Informacion', 'Obligacion']
         tick_marks = np.arange(len(target_names))
         cm_norm = matriz.astype('float') / matriz.sum(axis=1)[:, np.newaxis]
         plt.imshow(cm_norm, cmap=plt.cm.Blues, norm=colors.PowerNorm(gamma=1. / 2.), interpolation='None')
@@ -112,6 +159,8 @@ class ImageTreatment:
         plt.ylabel('True label')
         plt.xlabel('Predicted label')
         plt.show()
+        cr = classification_report(test, predicted, target_names=t_n)
+        print(cr)
 
 
     def brute_force(self, show=True):
@@ -175,6 +224,16 @@ class ImageTreatment:
         mask_blue = cv2.dilate(mask_blue, cv2.getStructuringElement(cv2.MORPH_RECT, (14, 14)), iterations=3)
         self.show_image(mask_blue, name='blue') if show else None
         self.edge_detection(mask_blue, c_max=30, c_min=10, draw_contour=False, color='blue')
+        lower_blue = self.__hsv_scaling(np.array([220, 20, 10]))
+        upper_blue = self.__hsv_scaling(np.array([238, 100, 30]))
+        mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
+        mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (25, 25)))
+        mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10, 10)))
+        # mask_full = mask_red + mask_yellow + mask_blue
+        self.show_image(mask_blue)
+        mask_blue = cv2.dilate(mask_blue, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (16, 16)), iterations=3)
+        self.show_image(mask_blue, name='blue')
+        self.edge_detection(mask_blue, c_max=30, c_min=10, draw_contour=False, color='light_blue')
         # self.show_image(self.image)
         print(self.new_marked)
         # mask_full = cv2.morphologyEx(mask_full, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5,5)))
@@ -256,6 +315,25 @@ class ImageTreatment:
                 print(marked[i])
                 m = marked[i]
                 if m[2][0] <= m[2][1]*2.5 or m[2][1] <= m[2][0]*2.5:
+                    new_marked.append(m)
+        elif color == 'light_blue':
+            lower_blue = self.__hsv_scaling(np.array([220, 20, 20]))
+            upper_blue = self.__hsv_scaling(np.array([238, 100, 30]))
+            mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
+            # mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)))
+            # self.show_image(mask_blue)
+            mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (6, 6)))
+            # self.show_image(mask_blue)
+            mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (25, 25)))
+            # mask_blue = cv2.dilate(mask_blue, cv2.getStructuringElement(cv2.MORPH_RECT,(4,4)), iterations=2)
+            # self.show_image(mask_blue)
+            marked = self.edge_detection(mask_blue, c_max=20, c_min=10, draw_contour=True, parent_area=area, capprox=[8], ccolor=(54,104,255), cperi=0.02)
+            for i in range(len(marked)):
+                if i > len(marked):
+                    break
+                print(marked[i])
+                m = marked[i]
+                if m[2][0] <= (m[2][1] + m[2][1] * 10 / 100) and m[2][1] <= (m[2][0] + m[2][0] * 10 / 100):
                     new_marked.append(m)
         if len(new_marked) > 0:
             self.new_marked[color].append({'xy':xy, 'nm':new_marked})
