@@ -9,7 +9,7 @@ def signal_detection():
         args.m = int(args.m) if args.m != '2' else -1
         imageTreatment.load_image(direction='data/' + str(i) + '.jpg')
         imageTreatment.load_image_test(direction='data/' + str(i) + '_test.jpg')
-        imageTreatment.brute_force(False)
+        imageTreatment.brute_force(True)
         imageTreatment.test()
 
 

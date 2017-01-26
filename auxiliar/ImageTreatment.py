@@ -91,8 +91,8 @@ class ImageTreatment:
                                 # print([m[0][0], m[0][1]])
                                 # print(m)
                                 i += 1
-                    print(len(masks[c][n]))
-                    print(i)
+                    print("test:"+str(len(masks[c][n])))
+                    print("pred:"+str(i))
                     if i > (len(masks[c][n])*.7):
                         regiones[c] += 1
                         if c == 'red':
@@ -172,7 +172,7 @@ class ImageTreatment:
 
         hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
         # hsv[:,:,2] += 10
-        # self.show_image(hsv)
+        self.show_image(hsv)
 
         lower_red = self.__hsv_scaling(np.array([270, 10, 10]))
         upper_red = self.__hsv_scaling(np.array([360, 100, 100]))
@@ -213,26 +213,28 @@ class ImageTreatment:
         # mask_yellow = cv2.morphologyEx(mask_yellow, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2)))
         self.show_image(mask_yellow, name='yellow') if show else None
         self.edge_detection(mask_yellow, c_max=30, c_min=10, draw_contour=False, color='yellow')
-        # # # hsv = cv2.bitwise_and(hsv, hsv, mask=cv2.bitwisenot(mask_yellow))
-        lower_blue = self.__hsv_scaling(np.array([215, 10, 10]))
-        upper_blue = self.__hsv_scaling(np.array([228, 100, 100]))
+        # # hsv = cv2.bitwise_and(hsv, hsv, mask=cv2.bitwisenot(mask_yellow))
+        lower_blue = self.__hsv_scaling(np.array([215, 45, 10]))
+        upper_blue = self.__hsv_scaling(np.array([228, 100, 50]))
         mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
         self.show_image(mask_blue, name='blue') if show else None
-        mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (15, 15)))
-        mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (10, 10)))
+        mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7)))
+        mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7)))
         # mask_full = mask_red + mask_yellow + mask_blue
         mask_blue = cv2.dilate(mask_blue, cv2.getStructuringElement(cv2.MORPH_RECT, (14, 14)), iterations=3)
         self.show_image(mask_blue, name='blue') if show else None
         self.edge_detection(mask_blue, c_max=30, c_min=10, draw_contour=False, color='blue')
-        lower_blue = self.__hsv_scaling(np.array([220, 20, 10]))
+        lower_blue = self.__hsv_scaling(np.array([220, 55, 10]))
         upper_blue = self.__hsv_scaling(np.array([238, 100, 30]))
         mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
-        mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (25, 25)))
-        mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (10, 10)))
-        # mask_full = mask_red + mask_yellow + mask_blue
         self.show_image(mask_blue)
-        mask_blue = cv2.dilate(mask_blue, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (16, 16)), iterations=3)
-        self.show_image(mask_blue, name='blue')
+        mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (35, 35)))
+        mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)))
+        self.show_image(mask_blue)
+        # mask_full = mask_red + mask_yellow + mask_blue
+        # self.show_image(mask_blue)
+        mask_blue = cv2.dilate(mask_blue, cv2.getStructuringElement(cv2.MORPH_RECT, (16, 16)), iterations=2)
+        # self.show_image(mask_blue, name='blue')
         self.edge_detection(mask_blue, c_max=30, c_min=10, draw_contour=False, color='light_blue')
         # self.show_image(self.image)
         print(self.new_marked)
@@ -317,17 +319,17 @@ class ImageTreatment:
                 if m[2][0] <= m[2][1]*2.5 or m[2][1] <= m[2][0]*2.5:
                     new_marked.append(m)
         elif color == 'light_blue':
-            lower_blue = self.__hsv_scaling(np.array([220, 20, 20]))
+            lower_blue = self.__hsv_scaling(np.array([220, 55, 10]))
             upper_blue = self.__hsv_scaling(np.array([238, 100, 30]))
             mask_blue = cv2.inRange(hsv, lower_blue, upper_blue)
             # mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (2, 2)))
             # self.show_image(mask_blue)
-            mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (6, 6)))
+            # mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2)))
             # self.show_image(mask_blue)
-            mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (25, 25)))
-            # mask_blue = cv2.dilate(mask_blue, cv2.getStructuringElement(cv2.MORPH_RECT,(4,4)), iterations=2)
+            mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15)))
+            # mask_blue = cv2.dilate(mask_blue, cv2.getStructuringElement(cv2.MORPH_ELLIPSE,(4,4)), iterations=2)
             # self.show_image(mask_blue)
-            marked = self.edge_detection(mask_blue, c_max=20, c_min=10, draw_contour=True, parent_area=area, capprox=[8], ccolor=(54,104,255), cperi=0.02)
+            marked = self.edge_detection(mask_blue, c_max=20, c_min=10, draw_contour=True, parent_area=area, capprox=[8], ccolor=(255,240,0), cperi=0.02)
             for i in range(len(marked)):
                 if i > len(marked):
                     break
@@ -426,7 +428,7 @@ class ImageTreatment:
                     area = w*h/2
                     # print("parent_area " + str(parent_area))
                     # print("area " + str(area))
-                    # print("approx " + str(len(approx)))
+                    print("approx " + str(len(approx)))
                     if len(approx) in capprox and area > 100:
                         contours.append([box.astype("int"), ccolor, [w,h], [x,y]])
                 # plt.show()
