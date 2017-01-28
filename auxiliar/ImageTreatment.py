@@ -62,6 +62,7 @@ class ImageTreatment:
         # print(mask_red[1])
         cf = 0
         t_n = []
+        nn = 0
         matriz = np.zeros((5,5))
         for c in self.new_marked.keys():
             print(c)
@@ -75,6 +76,7 @@ class ImageTreatment:
                 if c == 'light_blue':
                     t_n.append('Obligacion')
             for n in range(len(self.new_marked[c])):
+                nn = n
                 rect = []
                 x = self.new_marked[c][n]['xy'][0]+self.new_marked[c][n]['nm'][0][3][0]
                 y = self.new_marked[c][n]['xy'][1]+self.new_marked[c][n]['nm'][0][3][1]
@@ -146,8 +148,10 @@ class ImageTreatment:
                         matriz[0][4] += 1
                         test.append(0)
                         predicted.append(4)
+
         print(regiones)
         print(matriz)
+        print(t_n)
         target_names = ['Nada','Prohibicion','Peligro','Informacion', 'Obligacion']
         tick_marks = np.arange(len(target_names))
         cm_norm = matriz.astype('float') / matriz.sum(axis=1)[:, np.newaxis]
@@ -172,7 +176,7 @@ class ImageTreatment:
 
         hsv = cv2.cvtColor(self.image, cv2.COLOR_BGR2HSV)
         # hsv[:,:,2] += 10
-        self.show_image(hsv)
+        # self.show_image(hsv)
 
         lower_red = self.__hsv_scaling(np.array([270, 10, 10]))
         upper_red = self.__hsv_scaling(np.array([360, 100, 100]))
