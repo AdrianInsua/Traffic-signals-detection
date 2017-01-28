@@ -25,6 +25,7 @@ class ImageTreatment:
         hsv[0] = (hsv[0]*180)/360
         hsv[1] = (hsv[1]*255)/100
         hsv[2] = (hsv[2]*255)/100
+        print(hsv)
         return hsv
 
     def test(self):
@@ -273,7 +274,7 @@ class ImageTreatment:
             mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_OPEN, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2, 2)))
             mask_red = cv2.morphologyEx(mask_red, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (15, 15)))
             mask_red = cv2.dilate(mask_red, cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)), iterations=3)
-            # self.show_image(mask_red)
+            self.show_image(mask_red)
             marked = self.edge_detection(mask_red, c_max=2, c_min=1, draw_contour=True, parent_area=area, capprox=[8], ccolor=(0,0,2555), cperi=0.02)
             for i in range(len(marked)):
                 if i > len(marked):
@@ -313,7 +314,7 @@ class ImageTreatment:
             # self.show_image(mask_blue)
             mask_blue = cv2.morphologyEx(mask_blue, cv2.MORPH_CLOSE, cv2.getStructuringElement(cv2.MORPH_RECT, (10, 10)))
             # mask_blue = cv2.dilate(mask_blue, cv2.getStructuringElement(cv2.MORPH_RECT,(4,4)), iterations=2)
-            # self.show_image(mask_blue)
+            self.show_image(mask_blue)
             marked = self.edge_detection(mask_blue, c_max=20, c_min=10, draw_contour=True, parent_area=area, capprox=[4], ccolor=(54,104,255), cperi=0.02)
             for i in range(len(marked)):
                 if i > len(marked):

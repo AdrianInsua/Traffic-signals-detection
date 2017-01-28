@@ -4,7 +4,7 @@ import argparse
 import os
 
 def signal_detection():
-    for i in range(7,8):
+    for i in range(1,8):
         imageTreatment = ImageTreatment.ImageTreatment()
         args.m = int(args.m) if args.m != '2' else -1
         imageTreatment.load_image(direction='data/' + str(i) + '.jpg')
